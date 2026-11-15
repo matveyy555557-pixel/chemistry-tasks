@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Химический конструктор на Python (Tkinter)</title>
+  
+  <!-- Стили для подсветки синтаксиса (тема GitHub Dark) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f1f5f9;
+      color: #1e293b;
+      padding: 20px;
+      margin: 0;
+    }
+    .code-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #0d1117;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #161b22;
+      padding: 10px 16px;
+      border-bottom: 1px solid #30363d;
+      color: #c9d1d9;
+      font-size: 14px;
+    }
+    .copy-btn {
+      background: #238636;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #2ea043;
+    }
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    code {
+      font-family: "Fira Code", Consolas, Monaco, "Courier New", monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="code-container">
+    <div class="code-header">
+      <span>🧪 <strong>chem_constructor.py</strong> (Python + Tkinter)</span>
+      <button class="copy-btn" onclick="copyCode()">Копировать код</button>
+    </div>
+    <pre><code id="python-code" class="language-python"></code></pre>
+  </div>
+
+  <!-- Безопасное хранилище исходного кода без риска повреждения HTML-разметки -->
+  <script id="raw-python" type="text/plain">import random
+import tkinter as tk
+from tkinter import messagebox
+
+# База заданий: целевое вещество, тип реакции, правильный ответ, уравнение и варианты-дистракторы
+TASKS = [
+    {
+        "target": "оксид кальция (CaO)",
+        "reaction_type": "соединение",
+        "correct": "кальций и кислород",
+        "equation": "2Ca + O₂ → 2CaO",
+        "distractors": [
+            ("карбонат кальция (без нагревания)", "При обычных условиях CaCO₃ стабилен; разложение на CaO и CO₂ требует сильного прокаливания."),
+            ("оксид кальция и вода", "В результате этой реакции образуется гашёная известь — гидроксид кальция: CaO + H₂O → Ca(OH)₂."),
+            ("кальций и соляная кислота", "Металл вытесняет водород, образуя соль: Ca + 2HCl → CaCl₂ + H₂↑.")
+        ]
+    },
+    {
+        "target": "оксид магния (MgO)",
+        "reaction_type": "соединение",
+        "correct": "магний и кислород (при горении)",
+        "equation": "2Mg + O₂ → 2MgO",
+        "distractors": [
+            ("магний и вода", "При реакции с горячей водой образуется гидроксид магния и водород: Mg + 2H₂O → Mg(OH)₂ + H₂↑."),
+            ("хлорид магния и гидроксид натрия", "Реакция обмена даст нерастворимый гидроксид магния: MgCl₂ + 2NaOH → Mg(OH)₂↓ + 2NaCl."),
+            ("магний и серная кислота", "Произойдёт реакция замещения с образованием сульфата магния: Mg + H₂SO₄ → MgSO₄ + H₂↑.")
+        ]
+    },
+    {
+        "target": "гидроксид кальция (Ca(OH)₂)",
+        "reaction_type": "соединение",
+        "correct": "оксид кальция и вода",
+        "equation": "CaO + H₂O → Ca(OH)₂",
+        "distractors": [
+            ("карбонат кальция и вода", "Карбонат кальция нерастворим и не реагирует с водой."),
+            ("хлорид кальция и соляная кислота", "Реакция между солью и кислотой с одинаковым анионом не идёт."),
+            ("оксид кальция и углекислый газ", "Образуется средняя соль — карбонат кальция: CaO + CO₂ → CaCO₃.")
+        ]
+    },
+    {
+        "target": "хлорид цинка (ZnCl₂)",
+        "reaction_type": "замещение",
+        "correct": "цинк и соляная кислота",
+        "equation": "Zn + 2HCl → ZnCl₂ + H₂↑",
+        "distractors": [
+            ("цинк и хлорид натрия", "Цинк стоит правее натрия в ряду активности металлов и не может его вытеснить."),
+            ("оксид цинка и вода", "Оксид цинка не реагирует с водой."),
+            ("сульфат цинка и нитрат бария", "В осадок выпадет сульфат бария, а в растворе останется нитрат цинка: ZnSO₄ + Ba(NO₃)₂ → BaSO₄↓ + Zn(NO₃)₂.")
+        ]
+    },
+    {
+        "target": "хлорид натрия (NaCl)",
+        "reaction_type": "обмен (нейтрализация)",
+        "correct": "гидроксид натрия и соляная кислота",
+        "equation": "NaOH + HCl → NaCl + H₂O",
+        "distractors": [
+            ("нитрат натрия и хлорид калия", "Все исходные вещества и возможные продукты растворимы — реакция обмена не идёт."),
+            ("натрий и вода", "Образуется щёлочь и водород: 2Na + 2H₂O → 2NaOH + H₂↑."),
+            ("сульфат натрия и соляная кислота", "Реакция не идёт, так как не образуется ни осадок, ни газ, ни слабый электролит.")
+        ]
+    },
+    {
+        "target": "сульфат бария (BaSO₄)",
+        "reaction_type": "обмен",
+        "correct": "хлорид бария и серная кислота",
+        "equation": "BaCl₂ + H₂SO₄ → BaSO₄↓ + 2HCl",
+        "distractors": [
+            ("карбонат бария и вода", "Карбонат бария нерастворим в воде, реакция не идёт."),
+            ("оксид бария и соляная кислота", "Образуется хлорид бария и вода: BaO + 2HCl → BaCl₂ + H₂O."),
+            ("гидроксид бария и азотная кислота", "В результате нейтрализации получится нитрат бария: Ba(OH)₂ + 2HNO₃ → Ba(NO₃)₂ + 2H₂O.")
+        ]
+    },
+    {
+        "target": "углекислый газ (CO₂)",
+        "reaction_type": "обмен (с последующим разложением H₂CO₃)",
+        "correct": "карбонат кальция и соляная кислота",
+        "equation": "CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂↑",
+        "distractors": [
+            ("оксид углерода(II) и вода", "Угарный газ не реагирует с водой при обычных условиях."),
+            ("карбонат натрия и гидроксид калия", "Между солью и щёлочью реакция не идёт, так как не образуется осадок или газ."),
+            ("графит и вода (при комнатной температуре)", "Без сильного нагрева углерод с водой не реагирует.")
+        ]
+    },
+    {
+        "target": "медь (Cu)",
+        "reaction_type": "замещение",
+        "correct": "железо и раствор сульфата меди(II)",
+        "equation": "Fe + CuSO₄ → FeSO₄ + Cu↓",
+        "distractors": [
+            ("серебро и раствор хлорида меди(II)", "Серебро стоит правее меди в ряду активности металлов и не может её вытеснить."),
+            ("оксид меди(II) и вода", "Оксид меди(II) не реагирует с водой."),
+            ("гидроксид меди(II) и серная кислота", "Произойдёт растворение осадка с образованием соли: Cu(OH)₂ + H₂SO₄ → CuSO₄ + 2H₂O.")
+        ]
+    },
+    {
+        "target": "вода (H₂O)",
+        "reaction_type": "соединение",
+        "correct": "водород и кислород (при поджигании)",
+        "equation": "2H₂ + O₂ → 2H₂O",
+        "distractors": [
+            ("азот и водород", "При синтезе из азота и водорода образуется аммиак: N₂ + 3H₂ ⇄ 2NH₃."),
+            ("углекислый газ и оксид кальция", "Образуется твёрдый карбонат кальция: CaO + CO₂ → CaCO₃."),
+            ("натрий и хлор", "Образуется поваренная соль: 2Na + Cl₂ → 2NaCl.")
+        ]
+    },
+    {
+        "target": "оксид меди(II) (CuO)",
+        "reaction_type": "разложение",
+        "correct": "гидроксид меди(II) (при нагревании)",
+        "equation": "Cu(OH)₂ → CuO + H₂O",
+        "distractors": [
+            ("медь и соляная кислота", "Медь стоит правее водорода в ряду активности и не вытесняет его из HCl."),
+            ("сульфат меди(II) и хлорид натрия", "Оба вещества и предполагаемые продукты растворимы — реакция не идёт."),
+            ("гидроксид меди(II) и азотная кислота", "Образуется нитрат меди(II) и вода: Cu(OH)₂ + 2HNO₃ → Cu(NO₃)₂ + 2H₂O.")
+        ]
+    }
+]
+
+
+class ChemistryConstructorApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Химический конструктор")
+        self.root.geometry("680x560")
+        self.root.config(bg="#f8fafc")
+
+        self.tasks = TASKS.copy()
+        random.shuffle(self.tasks)
+        self.current_idx = 0
+        self.score = 0
+        self.selected_option = tk.IntVar(value=-1)
+        self.current_options = []
+
+        self.create_widgets()
+        self.load_task()
+
+    def create_widgets(self):
+        # Заголовок
+        self.title_label = tk.Label(
+            self.root, text="🧪 Химический конструктор неорганических веществ",
+            font=("Arial", 15, "bold"), bg="#f8fafc", fg="#0f172a"
+        )
+        self.title_label.pack(pady=12)
+
+        # Индикатор прогресса и счёта
+        self.info_label = tk.Label(
+            self.root, text="", font=("Arial", 11, "bold"), bg="#f8fafc", fg="#475569"
+        )
+        self.info_label.pack(pady=5)
+
+        # Рамка для целевого вещества
+        self.target_frame = tk.Frame(self.root, bg="#ffffff", bd=1, relief="solid")
+        self.target_frame.pack(fill="x", padx=25, pady=10)
+
+        self.target_label = tk.Label(
+            self.target_frame, text="", font=("Arial", 11), bg="#ffffff", fg="#1e293b",
+            justify="left", wraplength=600
+        )
+        self.target_label.pack(padx=15, pady=12, anchor="w")
+
+        # Рамка для вариантов ответов
+        self.options_frame = tk.Frame(self.root, bg="#f8fafc")
+        self.options_frame.pack(fill="both", expand=True, padx=25, pady=5)
+
+        self.radio_buttons = []
+        for i in range(4):
+            rb = tk.Radiobutton(
+                self.options_frame, text="", variable=self.selected_option, value=i,
+                font=("Arial", 10), bg="#f8fafc", fg="#334155", selectcolor="#e2e8f0",
+                wraplength=600, justify="left", anchor="w"
+            )
+            rb.pack(fill="x", pady=6, anchor="w")
+            self.radio_buttons.append(rb)
+
+        # Метка для обратной связи / разбора ошибки
+        self.feedback_label = tk.Label(
+            self.root, text="", font=("Arial", 10, "italic"), bg="#f8fafc", fg="#047857",
+            wraplength=620, justify="center"
+        )
+        self.feedback_label.pack(pady=5)
+
+        # Кнопка действия (Ответить / Следующее задание)
+        self.action_btn = tk.Button(
+            self.root, text="Ответить", font=("Arial", 11, "bold"), bg="#2563eb", fg="white",
+            padx=20, pady=8, command=self.handle_action, cursor="hand2"
+        )
+        self.action_btn.pack(pady=15)
+
+    def load_task(self):
+        if self.current_idx < len(self.tasks):
+            task = self.tasks[self.current_idx]
+            self.info_label.config(text=f"Задание {self.current_idx + 1} из {len(self.tasks)}  |  Счёт: {self.score}")
+            self.target_label.config(
+                text=f"🎯 Цель: получить {task['target']}\n⚙️ Тип реакции: {task['reaction_type']}"
+            )
+            
+            # Формируем и перемешиваем варианты (1 правильный + 3 дистрактора)
+            options = [(task["correct"], True, None)] + [
+                (text, False, reason) for text, reason in task["distractors"]
+            ]
+            random.shuffle(options)
+            self.current_options = options
+            self.selected_option.set(-1)
+            self.feedback_label.config(text="")
+
+            for i, (text, _, _) in enumerate(options):
+                self.radio_buttons[i].config(text=text, state="normal")
+            
+            self.action_btn.config(text="Ответить", command=self.handle_action)
+        else:
+            self.show_results()
+
+    def handle_action(self):
+        if self.action_btn["text"] == "Ответить":
+            sel = self.selected_option.get()
+            if sel == -1:
+                messagebox.showwarning("Внимание", "Пожалуйста, выберите один из вариантов ответа!")
+                return
+
+            # Отключаем радиокнопки после ответа
+            for rb in self.radio_buttons:
+                rb.config(state="disabled")
+
+            _, is_correct, reason = self.current_options[sel]
+            task = self.tasks[self.current_idx]
+
+            if is_correct:
+                self.score += 1
+                self.feedback_label.config(
+                    text=f"✅ Верно! Уравнение реакции: {task['equation']}", fg="#047857"
+                )
+            else:
+                self.feedback_label.config(
+                    text=f"❌ Неверно. {reason}\n👉 Правильно: {task['correct']} ({task['equation']})", fg="#dc2626"
+                )
+
+            self.current_idx += 1
+            if self.current_idx < len(self.tasks):
+                self.action_btn.config(text="Следующее задание")
+            else:
+                self.action_btn.config(text="Посмотреть результаты")
+        else:
+            self.load_task()
+
+    def show_results(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        result_frame = tk.Frame(self.root, bg="#f8fafc")
+        result_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        tk.Label(
+            result_frame, text="🏆 Тренировка завершена!", font=("Arial", 18, "bold"), bg="#f8fafc", fg="#0f172a"
+        ).pack(pady=30)
+
+        tk.Label(
+            result_frame, text=f"Ваш итоговый результат: {self.score} из {len(self.tasks)}", font=("Arial", 14, "bold"), bg="#f8fafc", fg="#2563eb"
+        ).pack(pady=10)
+
+        percentage = (self.score / len(self.tasks)) * 100
+        if percentage >= 80:
+            msg = "Отличный результат! Вы превосходно разбираетесь в химических свойствах и типах реакций."
+        elif percentage >= 50:
+            msg = "Неплохо! Но стоит повторить химические свойства некоторых классов неорганических соединений."
+        else:
+            msg = "Рекомендуем освежить в памяти теорию о химических реакциях и ряде активности металлов."
+
+        tk.Label(
+            result_frame, text=msg, font=("Arial", 11), bg="#f8fafc", fg="#475569", wraplength=500, justify="center"
+        ).pack(pady=15)
+
+        tk.Button(
+            result_frame, text="Пройти заново", font=("Arial", 12, "bold"), bg="#2563eb", fg="white",
+            padx=20, pady=10, command=self.restart_game, cursor="hand2"
+        ).pack(pady=30)
+
+    def restart_game(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        random.shuffle(self.tasks)
+        self.current_idx = 0
+        self.score = 0
+        self.selected_option = tk.IntVar(value=-1)
+        self.create_widgets()
+        self.load_task()
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ChemistryConstructorApp(root)
+    root.mainloop()</script>
+
+  <script>
+    // Вставляем исходный текст в блок <code> и запускаем подсветку
+    const rawCode = document.getElementById('raw-python').textContent;
+    const codeElement = document.getElementById('python-code');
+    codeElement.textContent = rawCode;
+    hljs.highlightElement(codeElement);
+
+    // Функция копирования в буфер обмена
+    function copyCode() {
+      navigator.clipboard.writeText(rawCode).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = 'Скопировано!';
+        setTimeout(() => btn.textContent = 'Копировать код', 2000);
+      });
+    }
+  </script>
+
+</body>
+</html>
